@@ -1,7 +1,8 @@
+import re
+
 import pandas as pd
 import xlwings as xw
 
-import re
 
 def egl_si():
     file_path = r"docs\si\RDX1 005S SEGOT.xlsm"
@@ -55,21 +56,26 @@ def export_df(df):
 
 def fill_in_si_data(dfb: pd.DataFrame, dfe: pd.DataFrame) -> pd.DataFrame:
 
+    def booking_count(df1: pd.DataFrame, df2: pd.DataFrame, booking: str) -> int:
+        df1_count, df2_count = 0, 0
+
+        if booking in df1['BOOKING'].values:
+            df1_count = df1['BOOKING'].value_counts()[booking]
+        if booking in df2['BOOKING'].values:
+            df2_count = df2['BOOKING'].value_counts()[booking]
+        
+        return max(df1_count, df2_count)
+    
     dfb = dfb.rename(columns={'BOOKING NUMBER': 'BOOKING'})
-    dfb_group = dfb.groupby('BOOKING').size()
-    dfe_group = dfe.groupby('BOOKING').size()
 
     df_concat = pd.concat([dfb, dfe])
-    df_unique = df_concat['BOOKING'].unique()
+    booking_array = df_concat['BOOKING'].unique()
 
-    match_value = lambda x : re.match(r"\d*[^\.0]", str(x))[0]
+    string = str()
+    string += ''.join(f'{booking}, ' * booking_count(dfb, dfe, booking) for booking in booking_array)
 
-    string = ""
-    for value in df_unique:
-        string += f'{value} ,' * max(dfb[str(value).replace(".0", "")], dfe[value])
 
-    #list_of_booking = [f'{value} ,' * max(dfb[value], dfe[value]) for value in df_concat['BOOKING'].unique()]
-    #print(list_of_booking)
+    
 
     """
     df['COMMENT'] = 'OK'
